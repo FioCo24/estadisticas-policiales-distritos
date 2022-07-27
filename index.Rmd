@@ -59,7 +59,7 @@ provincias <-
 # Lectura
 cantones <-
   st_read(
-    dsn = "C:/Users/Fiorela/Downloads/cantones.geojson",
+    dsn = "C:/Users/Fiorela/Downloads/cantones_simplificados.geojson",
     quiet = TRUE
   ) %>%
   st_transform(4326)
@@ -76,7 +76,7 @@ cantones <-
 # Lectura
 distritos <-
   st_read(
-    dsn = "C:/Users/Fiorela/Downloads/distritos.geojson",
+    dsn = "C:/Users/Fiorela/Downloads/distritos_simplificados.geojson",
     quiet = TRUE
   ) %>%
   st_transform(4326) 
@@ -90,7 +90,7 @@ distritos <-
 
 ```
 
-```{r en provincias, message=FALSE}
+```{r en provincias, message=FALSE, warning=FALSE}
 
 ### Provincias
 
@@ -139,7 +139,7 @@ provincias_delitos <-
 
 ```
 
-```{r en cantones, message=FALSE}
+```{r en cantones, message=FALSE, warning=FALSE}
 
 ### Cantones
 
@@ -211,7 +211,7 @@ cantones_delitos <-
 
 ```
 
-```{r en distritos, message=FALSE}
+```{r en distritos, message=FALSE, warning=FALSE}
 
 ### Distritos
 
@@ -276,7 +276,7 @@ datos_policiales <-
   mutate(Distrito = if_else(cod_canton == 410 & Distrito == "CURE?A", "CURENA", Distrito)) %>%
   mutate(Distrito = if_else(cod_canton == 305 & Distrito == "EL CHIRRIPO", "CHIRRIPO", Distrito)) %>%
   mutate(Distrito = if_else(cod_canton == 106 & Distrito == "LA LEGUA", "LEGUA", Distrito)) %>%
-  mutate(Distrito = if_else(cod_canton == 211 & Distrito == "TAPEZCO", "TAPESCO", Distrito)) 
+  mutate(Distrito = if_else(cod_canton == 211 & Distrito == "TAPEZCO", "TAPESCO", Distrito))
 
 # Se realiza nuevamente esta operación para reflejar los cambios en los nombres de distritos
 datos_policiales <-
@@ -339,7 +339,7 @@ distritos_delitos <-
 
 lista_tipo_delito <- unique(datos_policiales$Delito)
 lista_tipo_delito <- sort(lista_tipo_delito)
-lista_tipo_delito <- c("Todas", lista_tipo_delito)
+lista_tipo_delito <- c("Todos", lista_tipo_delito)
 
 lista_victima <- unique(datos_policiales$Victima)
 lista_victima <- sort(lista_victima)
@@ -347,11 +347,11 @@ lista_victima <- c("Todas", lista_victima)
 
 lista_edad <- unique(datos_policiales$Edad)
 lista_edad <- sort(lista_edad)
-lista_edad <- c("Todas", lista_edad)
+lista_edad <- c("Todos", lista_edad)
 
 lista_genero <- unique(datos_policiales$Genero)
 lista_genero <- sort(lista_genero)
-lista_genero <- c("Todas", lista_genero)
+lista_genero <- c("Todos", lista_genero)
 
 ```
 
@@ -367,7 +367,6 @@ Column {.sidebar}
 h3("Filtros de datos")
 
 # Tipo de delito
-
 selectInput(
   inputId = "Delito",
   label = "Tipo de Delito",
@@ -376,16 +375,14 @@ selectInput(
 )
 
 # Víctima
-
 selectInput(
   inputId = "Victima",
   label = "Víctima",
   choices = lista_victima,
-  selected = "Todos"
+  selected = "Todas"
 )
 
 # Género
-
 selectInput(
   inputId = "Genero",
   label = "Género",
@@ -395,7 +392,6 @@ selectInput(
 
 
 # Edad
-
 selectInput(
   inputId = "Edad",
   label = "Edad",
@@ -405,36 +401,36 @@ selectInput(
 
 # Función para filtrar los datos con base en los controles de entrada
 
-filtrarDistritos <- reactive({
-  distritos_filtrados <- distritos
+filtrarDelitos <- reactive({
+  delitos_filtrados <- datos_policiales
   
   if (input$Delito != "Todos") {
-    distritos_filtrados <-
-      distritos_filtrados %>%
+    delitos_filtrados <-
+      delitos_filtrados %>%
       filter(Delito == input$Delito)}
 
-  if (input$Victima != "Todos") {
-    distritos_filtrados <-
-      distritos_filtrados %>%
+  if (input$Victima != "Todas") {
+    delitos_filtrados <-
+      delitos_filtrados %>%
       filter(Victima == input$Victima)}
-  
+
   if (input$Genero != "Todos") {
-    distritos_filtrados <-
-      distritos_filtrados %>%
+    delitos_filtrados <-
+      delitos_filtrados %>%
       filter(Genero == input$Genero)}
-  
+
   if (input$Edad != "Todos") {
-    distritos_filtrados <-
-      distritos_filtrados %>%
+    delitos_filtrados <-
+      delitos_filtrados %>%
       filter(Edad == input$Edad)}
-    
-   return(distritos_filtrados)
+  
+   return(delitos_filtrados)
 })
 
 ```
 
 
-Row {data-height=590}
+Row {data-height=990}
 -----------------------------------------------------------------------
 
 ### Mapa
@@ -449,7 +445,7 @@ colores_distritos_delitos <-
 
 
 renderLeaflet({
-  distritos <- filtrarDistritos()
+  datos_policiales <- filtrarDelitos()
 
   
   leaflet() %>%
@@ -499,13 +495,17 @@ renderLeaflet({
 
 ```
 
-
-Row {data-height=400}
+Página 2
+====================================================================
+Row {data-height=500}
 -----------------------------------------------------------------------
 
 ### Tabla
 
 ```{r tabla}
+
+renderDT({
+  datos_policiales <- filtrarDelitos()
 
   datos_policiales %>%
     select(Delito, Fecha, Victima, Edad, Genero, Provincia, Canton, Distrito) %>%
@@ -517,15 +517,21 @@ Row {data-height=400}
         language = list(url = '//cdn.datatables.net/plug-ins/1.10.11/i18n/Spanish.json')
       )
     )
+})  
 
 ```
 
+Row {data-height=500}
+-----------------------------------------------------------------------
 
 ### Gráfico 1
 
 ```{r}
 
 # Gráfico de barras simples con cantidad de cada delito
+  
+renderPlotly({
+  datos_policiales <- filtrarDelitos()
   
   grafico_cantidad_delito <-
     datos_policiales %>%
@@ -537,6 +543,7 @@ Row {data-height=400}
     ylab("Cantidad de delitos por tipo") +
     coord_flip() +
     theme_get()
+
     
   
   # Gráfico plotly
@@ -544,11 +551,12 @@ Row {data-height=400}
   grafico_cantidad_delito %>%
     ggplotly() %>% 
     config(locale = 'es')
+})
 
 
 ```
 
-Página 2
+Página 3
 ====================================================================
 
 Row
@@ -559,6 +567,9 @@ Row
 ```{r}
 
 # Gráfico de barras simples con cantidad de víctimas
+
+renderPlotly({
+  datos_policiales <- filtrarDelitos()
 
   grafico_tipo_delito <-
     datos_policiales %>%
@@ -577,6 +588,7 @@ Row
   grafico_tipo_delito %>%
     ggplotly() %>% 
     config(locale = 'es')
+})
 
 
 ```
@@ -587,6 +599,9 @@ Row
 ```{r}
 
 # Gráfico de barras simples con delitos cometidos por mes
+
+renderPlotly({
+  datos_policiales <- filtrarDelitos()
 
   datos_policiales <-
     datos_policiales %>%
@@ -599,7 +614,6 @@ Row
     ggtitle("Delitos cometidos por mes") +
     xlab("Mes") +
     ylab("Cantidad de Delitos") +
-    coord_flip() +
     theme_get()
   
   
@@ -608,6 +622,7 @@ Row
   grafico_delitos_por_mes %>%
     ggplotly() %>% 
     config(locale = 'es')
+})
 
 
 ```
@@ -620,6 +635,9 @@ Row
 ```{r}
 
 # Gráfico de proporción por género
+
+renderPlotly({
+  datos_policiales <- filtrarDelitos()
 
   proporcion_delitos_genero <-
     datos_policiales %>%
@@ -635,6 +653,7 @@ Row
   proporcion_delitos_genero %>%
     ggplotly() %>% 
     config(locale = 'es')
+})
 
   
 ```
@@ -645,20 +664,24 @@ Row
 
 # Gráfico de proporción por edad
 
-proporcion_delitos_edad <-
-  datos_policiales %>%
-  ggplot(aes(x = Delito, fill = Edad)) +
-  geom_bar(position = "fill") +
-  ggtitle("Proporción de delitos por edad") +
-  xlab("Tipo de delito") +
-  ylab("Proporción") +
-  labs(fill = "Edad") +
-  coord_flip() +
-  theme_get()
+renderPlotly({
+  datos_policiales <- filtrarDelitos()
 
-proporcion_delitos_edad %>%
-  ggplotly() %>% 
-  config(locale = 'es')
+  proporcion_delitos_edad <-
+    datos_policiales %>%
+    ggplot(aes(x = Delito, fill = Edad)) +
+    geom_bar(position = "fill") +
+    ggtitle("Proporción de delitos por edad") +
+    xlab("Tipo de delito") +
+    ylab("Proporción") +
+    labs(fill = "Edad") +
+    coord_flip() +
+    theme_get()
+  
+  proporcion_delitos_edad %>%
+    ggplotly() %>% 
+    config(locale = 'es')
+})
 
 ```
 
